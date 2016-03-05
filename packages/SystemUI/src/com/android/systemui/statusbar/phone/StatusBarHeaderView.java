@@ -21,6 +21,7 @@ import android.app.ActivityManagerNative;
 import android.app.AlarmManager;
 import android.app.IUserSwitchObserver;
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -39,6 +40,8 @@ import android.os.RemoteException;
 import android.os.UserHandle;
 import android.provider.AlarmClock;
 import android.provider.CalendarContract;
+import android.graphics.drawable.TransitionDrawable;
+import android.net.Uri;
 import android.provider.Settings;
 import android.net.Uri;
 import android.util.AttributeSet;
@@ -55,6 +58,8 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.internal.util.cm.WeatherController;
+import com.android.internal.util.cm.WeatherControllerImpl;
 import com.android.keyguard.KeyguardStatusView;
 import com.android.systemui.BatteryLevelTextView;
 import com.android.systemui.BatteryMeterView;
@@ -62,14 +67,13 @@ import com.android.systemui.FontSizeUtils;
 import com.android.systemui.R;
 import com.android.systemui.cm.UserContentObserver;
 import com.android.systemui.qs.QSDragPanel;
+import com.android.systemui.omni.StatusBarHeaderMachine;
 import com.android.systemui.qs.QSPanel;
 import com.android.systemui.qs.QSTile;
 import com.android.systemui.statusbar.policy.BatteryController;
 import com.android.systemui.statusbar.policy.NetworkControllerImpl.EmergencyListener;
 import com.android.systemui.statusbar.policy.NextAlarmController;
 import com.android.systemui.statusbar.policy.UserInfoController;
-import com.android.systemui.statusbar.policy.WeatherController;
-import com.android.systemui.statusbar.policy.WeatherControllerImpl;
 import com.android.systemui.tuner.TunerService;
 
 import java.text.NumberFormat;
@@ -81,8 +85,11 @@ import org.cyanogenmod.internal.logging.CMMetricsLogger;
 /**
  * The view to manage the header area in the expanded status bar.
  */
-public class StatusBarHeaderView extends RelativeLayout implements View.OnClickListener,
-        NextAlarmController.NextAlarmChangeCallback, WeatherController.Callback, EmergencyListener {
+public class StatusBarHeaderView extends RelativeLayout implements View.OnClickListener, View.OnLongClickListener,
+        NextAlarmController.NextAlarmChangeCallback, WeatherController.Callback, 
+        StatusBarHeaderMachine.IStatusBarHeaderMachineObserver, EmergencyListener {
+
+    static final String TAG = "StatusBarHeaderView";
 
     private boolean mExpanded;
     private boolean mListening;
@@ -162,6 +169,9 @@ public class StatusBarHeaderView extends RelativeLayout implements View.OnClickL
     private boolean mEditing;
 
     private UserInfoController mUserInfoController;
+    private ImageView mBackgroundImage;
+    private Drawable mCurrentBackground;
+    private float mLastHeight;
 
     public StatusBarHeaderView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -199,10 +209,12 @@ public class StatusBarHeaderView extends RelativeLayout implements View.OnClickL
         mSystemIcons = (LinearLayout) findViewById(R.id.system_icons);
         mWeatherContainer = (LinearLayout) findViewById(R.id.weather_container);
         mWeatherContainer.setOnClickListener(this);
+        mWeatherContainer.setOnLongClickListener(this);
         mWeatherLine1 = (TextView) findViewById(R.id.weather_line_1);
         mWeatherLine2 = (TextView) findViewById(R.id.weather_line_2);
         mEditTileDoneText = (TextView) findViewById(R.id.done);
         mSettingsObserver = new SettingsObserver(new Handler());
+        mBackgroundImage = (ImageView) findViewById(R.id.background_image);
         loadDimens();
         updateVisibilities();
         updateClockScale();
@@ -278,7 +290,6 @@ public class StatusBarHeaderView extends RelativeLayout implements View.OnClickL
         mClockCollapsedSize = getResources().getDimensionPixelSize(R.dimen.qs_time_collapsed_size);
         mClockExpandedSize = getResources().getDimensionPixelSize(R.dimen.qs_time_expanded_size);
         mClockCollapsedScaleFactor = (float) mClockCollapsedSize / (float) mClockExpandedSize;
-
         updateClockScale();
         updateClockCollapsedMargin();
     }
@@ -329,7 +340,6 @@ public class StatusBarHeaderView extends RelativeLayout implements View.OnClickL
         mClockCollapsedSize = getResources().getDimensionPixelSize(R.dimen.qs_time_collapsed_size);
         mClockExpandedSize = getResources().getDimensionPixelSize(R.dimen.qs_time_expanded_size);
         mClockCollapsedScaleFactor = (float) mClockCollapsedSize / (float) mClockExpandedSize;
-
     }
 
     public void setActivityStarter(ActivityStarter activityStarter) {
@@ -494,14 +504,16 @@ public class StatusBarHeaderView extends RelativeLayout implements View.OnClickL
     @Override
     public void onWeatherChanged(WeatherController.WeatherInfo info) {
         if (info.temp == null || info.condition == null) {
-            mWeatherLine1.setText(null);
+            mWeatherLine1.setText(mContext.getString(R.string.weather_info_not_available));
+            mWeatherLine2.setText(mContext.getString(R.string.weather_info_not_available2));
         } else {
             mWeatherLine1.setText(mContext.getString(
                     R.string.status_bar_expanded_header_weather_format,
                     info.temp,
                     info.condition));
+            mWeatherLine2.setText(info.city);
         }
-        mWeatherLine2.setText(info.city);
+        
     }
 
     private void updateClickTargets() {
@@ -547,14 +559,27 @@ public class StatusBarHeaderView extends RelativeLayout implements View.OnClickL
         }
         mCurrentT = t;
         float height = mCollapsedHeight + t * (mExpandedHeight - mCollapsedHeight);
-        if (height < mCollapsedHeight) {
-            height = mCollapsedHeight;
+        if (height != mLastHeight) {
+            if (height < mCollapsedHeight) {
+                height = mCollapsedHeight;
+            }
+            if (height > mExpandedHeight) {
+                height = mExpandedHeight;
+            }
+            final float heightFinal = height;
+            setClipping(heightFinal);
+
+            post(new Runnable() {
+                 public void run() {
+                    RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) mBackgroundImage.getLayoutParams(); 
+                    params.height = (int)heightFinal;
+                    mBackgroundImage.setLayoutParams(params);
+                }
+            });
+
+            updateLayoutValues(t);
+            mLastHeight = heightFinal;
         }
-        if (height > mExpandedHeight) {
-            height = mExpandedHeight;
-        }
-        setClipping(height);
-        updateLayoutValues(t);
     }
 
     private void updateLayoutValues(float t) {
@@ -582,6 +607,9 @@ public class StatusBarHeaderView extends RelativeLayout implements View.OnClickL
     public void setUserInfoController(UserInfoController userInfoController) {
         mUserInfoController = userInfoController;
         userInfoController.addListener(mUserInfoChangedListener);
+        if (mMultiUserSwitch != null) {
+            mMultiUserSwitch.setUserInfoController(mUserInfoController);
+        }
     }
 
     @Override
@@ -607,6 +635,14 @@ public class StatusBarHeaderView extends RelativeLayout implements View.OnClickL
         } else if (v == mWeatherContainer) {
             startForecastActivity();
         }
+    }
+
+    @Override
+    public boolean onLongClick(View v) {
+        if (v == mWeatherContainer) {
+            openLockClockWeatherActivity();
+        }
+        return true;
     }
 
     private void startSettingsActivity() {
@@ -636,6 +672,13 @@ public class StatusBarHeaderView extends RelativeLayout implements View.OnClickL
         Intent intent = new Intent(Intent.ACTION_MAIN);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.setComponent(WeatherControllerImpl.COMPONENT_WEATHER_FORECAST);
+        mActivityStarter.startActivity(intent, true /* dismissShade */);
+    }
+
+    private void openLockClockWeatherActivity() {
+        Intent intent = new Intent().setComponent(new ComponentName(
+            "com.cyanogenmod.lockclock", "com.cyanogenmod.lockclock.preference.Preferences"));
+        intent.putExtra(":android:show_fragment", "com.cyanogenmod.lockclock.preference.WeatherPreferences");
         mActivityStarter.startActivity(intent, true /* dismissShade */);
     }
 
@@ -773,7 +816,7 @@ public class StatusBarHeaderView extends RelativeLayout implements View.OnClickL
 
     public void setEditing(boolean editing) {
         mEditing = editing;
-        if (mEditingDetailAdapter == null) {
+        if (editing && mEditingDetailAdapter == null) {
             mEditingDetailAdapter = new QSTile.DetailAdapter() {
                 @Override
                 public int getTitle() {
@@ -1042,9 +1085,57 @@ public class StatusBarHeaderView extends RelativeLayout implements View.OnClickL
 
             mShowBatteryTextExpanded = showExpandedBatteryPercentage;
             mShowWeather = CMSettings.System.getInt(
-                    resolver, CMSettings.System.STATUS_BAR_SHOW_WEATHER, 1) == 1;
+                    resolver, CMSettings.System.STATUS_BAR_SHOW_WEATHER, 0) == 1;
             updateVisibilities();
             requestCaptureValues();
         }
+    }
+
+    private void doUpdateStatusBarCustomHeader(final Drawable next, final boolean force) {
+        if (next != null) {
+            if (next != mCurrentBackground) {
+                Log.i(TAG, "Updating status bar header background");
+                mBackgroundImage.setVisibility(View.VISIBLE);
+                setNotificationPanelHeaderBackground(next, force);
+                mCurrentBackground = next;
+            }
+        } else {
+            mCurrentBackground = null;
+            mBackgroundImage.setVisibility(View.GONE);
+        }
+    }
+
+    private void setNotificationPanelHeaderBackground(final Drawable dw, final boolean force) {
+        if (mBackgroundImage.getDrawable() != null && !force) {
+            Drawable[] arrayDrawable = new Drawable[2];
+            arrayDrawable[0] = mBackgroundImage.getDrawable();
+            arrayDrawable[1] = dw;
+
+            TransitionDrawable transitionDrawable = new TransitionDrawable(arrayDrawable);
+            transitionDrawable.setCrossFadeEnabled(true);
+            mBackgroundImage.setImageDrawable(transitionDrawable);
+            transitionDrawable.startTransition(1000);
+        } else {
+            mBackgroundImage.setImageDrawable(dw);
+        }
+    }
+
+    @Override
+    public void updateHeader(final Drawable headerImage, final boolean force) {
+        post(new Runnable() {
+             public void run() {
+                 doUpdateStatusBarCustomHeader(headerImage, force);
+            }
+        });
+    }
+
+    @Override
+    public void disableHeader() {
+        post(new Runnable() {
+             public void run() {
+                mCurrentBackground = null;
+                mBackgroundImage.setVisibility(View.GONE);
+            }
+        });
     }
 }

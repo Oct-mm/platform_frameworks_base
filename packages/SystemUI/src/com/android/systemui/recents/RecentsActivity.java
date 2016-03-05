@@ -30,6 +30,7 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.os.UserHandle;
 import android.provider.Settings;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewStub;
@@ -38,7 +39,6 @@ import android.widget.Toast;
 import com.android.internal.logging.MetricsLogger;
 import com.android.systemui.Prefs;
 import com.android.systemui.R;
-import com.android.systemui.recents.RecentsConfiguration;
 import com.android.systemui.recents.misc.Console;
 import com.android.systemui.recents.misc.DebugTrigger;
 import com.android.systemui.recents.misc.ReferenceCountedTrigger;
@@ -133,7 +133,7 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
     /**
      * Broadcast receiver to handle messages from AlternateRecentsComponent.
      */
-    private final BroadcastReceiver mServiceBroadcastReceiver = new BroadcastReceiver() {
+    final BroadcastReceiver mServiceBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
@@ -163,7 +163,7 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
     /**
      * Broadcast receiver to handle messages from the system
      */
-    private final BroadcastReceiver mSystemBroadcastReceiver = new BroadcastReceiver() {
+    final BroadcastReceiver mSystemBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
@@ -182,7 +182,7 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
     /**
      * A custom debug trigger to listen for a debug key chord.
      */
-    private final DebugTrigger mDebugTrigger = new DebugTrigger(new Runnable() {
+    final DebugTrigger mDebugTrigger = new DebugTrigger(new Runnable() {
         @Override
         public void run() {
             onDebugModeTriggered();
@@ -211,9 +211,7 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
 
         ArrayList<TaskStack> stacks = plan.getAllTaskStacks();
         mConfig.launchedWithNoRecentTasks = !plan.hasTasks();
-        if (!mConfig.launchedWithNoRecentTasks) {
-            mRecentsView.setTaskStacks(stacks);
-        }
+        mRecentsView.setTaskStacks(stacks);
 
         // Create the home intent runnable
         Intent homeIntent = new Intent(Intent.ACTION_MAIN, null);
@@ -222,10 +220,9 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
                 Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
         mFinishLaunchHomeRunnable = new FinishRecentsRunnable(homeIntent,
             ActivityOptions.makeCustomAnimation(this,
-                mConfig.launchedFromSearchHome ? R.anim.recents_to_search_launcher_enter :
-                        R.anim.recents_to_launcher_enter,
-                    mConfig.launchedFromSearchHome ? R.anim.recents_to_search_launcher_exit :
-                        R.anim.recents_to_launcher_exit));
+                 R.anim.recents_to_search_launcher_enter,
+                    R.anim.recents_to_search_launcher_exit));
+        setImmersiveRecents();
 
         // Mark the task that is the launch target
         int taskStackCount = stacks.size();
@@ -259,32 +256,21 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
                 }
             });
             mRecentsView.setSearchBarVisibility(View.GONE);
+            findViewById(R.id.floating_action_button).setVisibility(View.GONE);
         } else {
             if (mEmptyView != null) {
                 mEmptyView.setVisibility(View.GONE);
                 mEmptyView.setOnClickListener(null);
             }
-            boolean showSearchBar = CMSettings.System.getInt(getContentResolver(),
-                       CMSettings.System.RECENTS_SHOW_SEARCH_BAR, 1) == 1;
-
-            if (mRecentsView.hasValidSearchBar()) {
-                if (showSearchBar) {
+            findViewById(R.id.floating_action_button).setVisibility(View.VISIBLE);
+            if (!mConfig.searchBarEnabled) {
+                mRecentsView.setSearchBarVisibility(View.GONE);
+            } else {
+                if (mRecentsView.hasValidSearchBar()) {
                     mRecentsView.setSearchBarVisibility(View.VISIBLE);
                 } else {
-                    mRecentsView.setSearchBarVisibility(View.GONE);
-                }
-            } else {
-                if (showSearchBar) {
                     refreshSearchWidgetView();
                 }
-            }
-
-            // Update search bar space height
-            if (showSearchBar) {
-                mConfig.searchBarSpaceHeightPx = getResources().getDimensionPixelSize(
-                    R.dimen.recents_search_bar_space_height);
-            } else {
-                mConfig.searchBarSpaceHeightPx = 0;
             }
         }
 
@@ -459,6 +445,14 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
     }
 
     @Override
+    protected void onResume() {
+        if (mConfig.searchBarEnabled && mConfig.launchedFromHome) {
+            overridePendingTransition(0, 0);
+        }
+        super.onResume();
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
         if (mAfterPauseRunnable != null) {
@@ -530,6 +524,7 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
 
         // Animate the SystemUI scrim views
         mScrimViews.startEnterRecentsAnimation();
+        mRecentsView.startFABanimation();
     }
 
     @Override
@@ -590,6 +585,8 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
 
         // Dismiss Recents to the focused Task or Home
         dismissRecentsToFocusedTaskOrHome(true);
+
+        mRecentsView.endFABanimation();
     }
 
     /** Called when debug mode is triggered */
@@ -618,6 +615,38 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
         }
     }
 
+    private void setImmersiveRecents() {
+        boolean isPrimary = UserHandle.getCallingUserId() == UserHandle.USER_OWNER;
+        int immersiveRecents = isPrimary ? getImmersiveRecents() : 0;
+
+        if (immersiveRecents == 0) {
+         // default AOSP action
+        }
+        if (immersiveRecents == 1) {
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        }
+        if (immersiveRecents == 2) {
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        }
+        if (immersiveRecents == 3) {
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        }
+    }
+
+    private int getImmersiveRecents() {
+        return Settings.System.getInt(getContentResolver(),
+                Settings.System.IMMERSIVE_RECENTS, 0);
+    }
 
     /**** RecentsResizeTaskDialog ****/
 
@@ -639,21 +668,25 @@ public class RecentsActivity extends Activity implements RecentsView.RecentsView
     public void onExitToHomeAnimationTriggered() {
         // Animate the SystemUI scrim views out
         mScrimViews.startExitRecentsAnimation();
+        mRecentsView.endFABanimation();
     }
 
     @Override
     public void onTaskViewClicked() {
+        mRecentsView.endFABanimation();
     }
 
     @Override
     public void onTaskLaunchFailed() {
         // Return to Home
         dismissRecentsToHomeRaw(true);
+        mRecentsView.endFABanimation();
     }
 
     @Override
     public void onAllTaskViewsDismissed() {
         mFinishLaunchHomeRunnable.run();
+        mRecentsView.endFABanimation();
     }
 
     @Override

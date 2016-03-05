@@ -2117,6 +2117,9 @@
          on the current state of the device.
          Each item must be one of the following strings:
          "power" = Power off
+         "reboot" = Reboot
+         "screenshot" = Take screenshot
+         "screenrecord" = Take screen recording
          "settings" = An action to launch settings
          "airplane" = Airplane mode toggle
          "bugreport" = Take bug report, if available
@@ -2125,8 +2128,6 @@
          -->
     <string-array translatable="false" name="config_globalActionsList">
         <item>power</item>
-        <item>bugreport</item>
-        <item>users</item>
     </string-array>
 
     <!-- Number of milliseconds to hold a wake lock to ensure that drawing is fully
@@ -2524,4 +2525,7 @@
          automatically try to pair with it when the device exits tablet mode. -->
     <string translatable="false" name="config_packagedKeyboardName"></string>
     <integer name="config_dayColorTemperature">6500</integer>
+
+    <!-- Show battery fully charged notification -->
+    <bool name="config_showBatteryFullyChargedNotification">false</bool>
 </resources>

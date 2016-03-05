@@ -28,7 +28,6 @@
   <string name="permdesc_readPhoneBlacklist">Laat \'n program toe om inligting oor telefoonnommers wat geblokkeer is van inkomende oproepe of boodskappe te lees.</string>
   <string name="permlab_changePhoneBlacklist">Verander selfoon swartlys</string>
   <string name="permdesc_changePhoneBlacklist">Laat \'n program toe om van die telefoonnommers wat geblokkeer is vir inkomende oproepe of boodskappe te verander.</string>
-  <string name="global_action_choose_profile">Profiel</string>
   <string name="permlab_setKeyguardWallpaper">Stel slotskerm agtergrond in</string>
   <string name="permdesc_setKeyguardWallpaper">Laat \'n program toe om die slotskerm agtergrond te verander.</string>
   <string name="global_action_reboot">Herlaai</string>
@@ -108,8 +107,9 @@
   <string name="app_ops_start_at_bootup">begin by aanskakeling</string>
   <string name="app_ops_toast_window">vertoon uitspring boodskappe</string>
   <string name="app_ops_toggle_bluetooth">wissel Bluetooth</string>
-  <string name="app_ops_toggle_mobile_data">wissel mobiele data</string>
+  <string name="app_ops_toggle_mobile_data">skakel sellulêre data aan/af</string>
   <string name="app_ops_toggle_nfc">wissel NFC</string>
+  <string name="app_ops_toggle_wifi">wissel Wi-Fi</string>
   <string name="app_ops_use_alarm_volume">beheer alarmstelsel volume</string>
   <string name="app_ops_use_audio_focus">beheer klank fokus</string>
   <string name="app_ops_use_bluetooth_volume">beheer Bluetooth volume</string>
@@ -122,6 +122,21 @@
   <string name="app_ops_use_voice_volume">beheer stem oproep volume</string>
   <string name="app_ops_write_mms">skryf \'n MMS boodskap</string>
   <string name="app_ops_write_sms">Skryf \'n SMS boodskap</string>
+  <string name="app_ops_use_fingerprint">gebruik vingerfdruk</string>
+  <string name="app_ops_add_voicemail">voeg \'n stem boodskap by</string>
+  <string name="app_ops_read_phone_state">kry toegang na foon toestand</string>
+  <string name="app_ops_scan_wifi">skandeer Wi-Fi netwerke</string>
+  <string name="app_ops_change_wallpaper">verander die agtergrond</string>
+  <string name="app_ops_assist_structure">gebruik assistent struktuur</string>
+  <string name="app_ops_assist_screenshot">neem \'n skermfoto</string>
+  <string name="app_ops_use_body_sensors">gebruik liggaam sensors</string>
+  <string name="app_ops_read_cell_broadcasts">lees sel uitsendings</string>
+  <string name="app_ops_mock_location">simuleer jou plek</string>
+  <string name="app_ops_read_external_storage">lees eksterne spasie</string>
+  <string name="app_ops_write_external_storage">skryf eksterne spasie</string>
+  <string name="app_ops_turn_on_screen">skakel skerm aan</string>
+  <string name="app_ops_get_accounts">kry toestel rekeninge</string>
+  <string name="app_ops_wifi_change">verander Wi-Fi status</string>
   <string name="app_ops_su">kry root toegang</string>
   <string name="lock_to_app_toast_no_navbar">Om die skerm te ontspeld, raak en hou die Terug knoppie.</string>
   <string name="live_display_auto">Outomaties</string>
@@ -138,4 +153,8 @@
   <string name="tethered_notification_no_device_message">Geen gekoppelde toestel</string>
   <string name="tethered_notification_one_device_message"><xliff:g id="count">%1$s</xliff:g> gekoppelde toestel</string>
   <string name="tethered_notification_multi_device_message"><xliff:g id="count">%1$s</xliff:g> gekoppelde toestelle</string>
+  <string name="notify_package_component_protected_title">Aktiwiteit begin geblokkeer</string>
+  <string name="notify_package_component_protected_text"><xliff:g id="app_name">%1$s</xliff:g> is beskerm om uitgevoer te word. Raak om toestemming te gee en die toepassing te begin.</string>
+  <string name="notify_battery_fully_charged_title">Battery vol gelaai</string>
+  <string name="notify_battery_fully_charged_text">Diskonnekteer jou toestel van die laaier om die battery lewe te verleng.</string>
 </resources>

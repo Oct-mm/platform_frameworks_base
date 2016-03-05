@@ -56,6 +56,7 @@
   <string name="quick_settings_title_header">Záhlaví</string>
   <string name="quick_settings_title_tiles">Dlaždice</string>
   <string name="quick_settings_title_show_weather">Zobrazit počasí</string>
+  <string name="quick_settings_title_show_brightness_slider">Zobrazit posuvník jasu</string>
   <string name="quick_settings_title_enlarge_first_row">Zvětšit první řádek</string>
   <string name="screen_pinning_description_no_navbar">Zůstává zobrazeno, dokud není uvolněn. Dotykem a podržením tlačítka Zpět bude provedeno uvolnění.</string>
   <string name="quick_settings_custom_tile_detail_title">Vlastní dlaždice</string>
@@ -67,6 +68,7 @@
   <string name="quick_settings_profiles_off">Profily zakázány</string>
   <string name="quick_settings_heads_up_label">Plovoucí upozornění</string>
   <string name="quick_settings_battery_saver_label">Spořič baterie</string>
+  <string name="quick_settings_caffeine_label">Kofein</string>
   <string name="accessibility_quick_settings_sync_off">Synch. vyp.</string>
   <string name="accessibility_quick_settings_sync_on">Synch. zap.</string>
   <string name="accessibility_quick_settings_sync_changed_off">Synchronizace vypnuta.</string>
@@ -78,6 +80,7 @@
   <string name="quick_settings_lockscreen_label">Zamykací obrazovka</string>
   <string name="quick_settings_ambient_display_label">Ambientní zobrazení</string>
   <string name="quick_settings_lockscreen_label_enforced">Vynucení zámku obrazovky</string>
+  <string name="quick_settings_lockscreen_label_locked_by_profile">Potlačen profilem</string>
   <string name="accessibility_quick_settings_screen_timeout">Limit vypnutí obrazovky: <xliff:g id="timeout" example="30 seconds">%s</xliff:g>.</string>
   <string name="accessibility_quick_settings_screen_timeout_changed">Limit vypnutí obrazovky změněn na <xliff:g id="timeout" example="30 seconds">%s</xliff:g>.</string>
   <string name="qs_tile_performance">Režim baterie</string>
@@ -104,6 +107,8 @@
   <string name="accessibility_quick_settings_heads_up_on">Plovoucí upozornění zap.</string>
   <string name="accessibility_quick_settings_heads_up_changed_off">Plovoucí upozorněn vyp.</string>
   <string name="accessibility_quick_settings_heads_up_changed_on">Plovoucí upozornění zap.</string>
+  <string name="accessibility_quick_settings_caffeine_off">Kofein vyp.</string>
+  <string name="accessibility_quick_settings_caffeine_on">Kofein zap.</string>
   <string name="accessibility_quick_settings_battery_saver_off">Spořič baterie vyp.</string>
   <string name="accessibility_quick_settings_battery_saver_on">Spořič baterie zap.</string>
   <string name="accessibility_quick_settings_battery_saver_changed_off">Spořič baterie vypnut.</string>
@@ -135,5 +140,7 @@
   <string name="accessibility_quick_settings_location_changed_high_accuracy">Zjištění polohy změněno na vysokou přesnost.</string>
   <string name="quick_settings_tiles_category_system">Systémové dlaždice</string>
   <string name="quick_settings_tiles_add_tiles">Přidat dlaždici</string>
-  <string name="hotspot_apm_message">Nelze se připojit k mobilním sítím při zapnutém režimu „V letadle“. Vypněte prosím tento režim a zkuste to znovu.</string>
+  <string name="hotspot_apm_message">Nelze se připojit k mobilním datům při zapnutém režimu „Letadlo“. Vypněte tento režim a zkuste to znovu.</string>
+  <string name="quick_settings_tile_flashlight_not_title">Svítilna zapnuta</string>
+  <string name="quick_settings_tile_flashlight_not_summary">Dotykem vypněte</string>
 </resources>

@@ -23,8 +23,12 @@ import android.annotation.Nullable;
 import android.app.ActivityManager;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.Animatable;
+import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.UserHandle;
+import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -61,6 +65,7 @@ public class QSPanelTopView extends FrameLayout {
 
     private SettingsObserver mSettingsObserver;
     private boolean mListening;
+    private boolean mSkipAnimations;
 
     public QSPanelTopView(Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, 0);
@@ -133,12 +138,11 @@ public class QSPanelTopView extends FrameLayout {
         boolean animateToState = !isLaidOut();
         super.onLayout(changed, left, top, right, bottom);
         if (animateToState) {
-            Log.e(TAG, "first layout animating to state!");
-            animateToState();
+            goToState();
         }
     }
 
-    public void setEditing(boolean editing) {
+    public void setEditing(boolean editing, boolean skipAnim) {
         mEditing = editing;
         if (editing) {
             mDisplayingInstructions = true;
@@ -147,7 +151,11 @@ public class QSPanelTopView extends FrameLayout {
             mDisplayingInstructions = false;
             mDisplayingTrash = false;
         }
-        animateToState();
+        if (skipAnim) {
+            goToState();
+        } else {
+            animateToState();
+        }
     }
 
     public void onStopDrag() {
@@ -158,6 +166,18 @@ public class QSPanelTopView extends FrameLayout {
     public void onStartDrag() {
         mDisplayingTrash = true;
         animateToState();
+    }
+
+    public void setDropIcon(int resourceId, int colorResourceId) {
+        mDropTargetIcon.setImageResource(resourceId);
+        final Drawable drawable = mDropTargetIcon.getDrawable();
+
+        DrawableCompat.setTintMode(drawable, PorterDuff.Mode.SRC_ATOP);
+        DrawableCompat.setTint(drawable, mContext.getColor(colorResourceId));
+
+        if (drawable instanceof Animatable) {
+            ((Animatable) drawable).start();
+        }
     }
 
     public void toast(int textStrResId) {
@@ -238,9 +258,9 @@ public class QSPanelTopView extends FrameLayout {
                 }
             });
 
-            mAnimator.setDuration(500);
+            mAnimator.setDuration(mSkipAnimations ? 0 : 500);
             mAnimator.setInterpolator(new FastOutSlowInInterpolator());
-            mAnimator.setStartDelay(100);
+            mAnimator.setStartDelay(mSkipAnimations ? 0 : 100);
             mAnimator.playTogether(instructionAnimator, trashAnimator,
                     brightnessAnimator, toastAnimator);
             mAnimator.start();
@@ -255,6 +275,12 @@ public class QSPanelTopView extends FrameLayout {
     }
 
     private void animateToState() {
+        mSkipAnimations = false;
+        post(mAnimateRunnable);
+    }
+
+    private void goToState() {
+        mSkipAnimations = true;
         post(mAnimateRunnable);
     }
 
